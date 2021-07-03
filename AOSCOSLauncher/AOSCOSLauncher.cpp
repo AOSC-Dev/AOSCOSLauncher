@@ -36,6 +36,18 @@ HRESULT InstallDistribution(bool createUser)
         return hr;
     }
 
+    // Do not unset PATH
+    hr = g_wslApi.WslLaunchInteractive(L"sed -e 's/^unset PATH MANPATH/unset MANPATH # PATH/' -i /etc/profile", true, &exitCode);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    // Configure per distro launch settings with wslconf
+    hr = g_wslApi.WslLaunchInteractive(L"echo \"# Enable extra metadata options by default\n[automount]\noptions = \\\"metadata,umask=22,fmask=11\\\"\" > /etc/wsl.conf", true, &exitCode);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
     // Create a user account.
     if (createUser) {
         Helpers::PrintMessage(MSG_CREATE_USER_PROMPT);

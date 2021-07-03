@@ -37,20 +37,6 @@ bool DistributionInfo::CreateUser(std::wstring_view userName)
         return false;
     }
 
-    // Do not unset PATH
-    commandLine = L"sed -e 's/^unset PATH MANPATH/unset MANPATH # PATH/' -i /etc/profile";
-    hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
-    if ((FAILED(hr)) || (exitCode != 0)) {
-        return false;
-    }
-
-    // Configure per distro launch settings with wslconf
-    commandLine = L"echo \"# Enable extra metadata options by default\n[automount]\noptions = \\\"metadata,umask=22,fmask=11\\\"\" > /etc/wsl.conf";
-    hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
-    if ((FAILED(hr)) || (exitCode != 0)) {
-        return false;
-    }
-
     return true;
 }
 
