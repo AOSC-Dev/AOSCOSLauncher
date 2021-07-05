@@ -48,6 +48,28 @@ HRESULT InstallDistribution(bool createUser)
         return hr;
     }
 
+    // Set container locale according to Windows system locale
+    HRESULT res = -1;
+    LPWSTR locale = (LPWSTR)malloc(LOCALE_NAME_MAX_LENGTH * 2);
+    LPWSTR command = (LPWSTR)malloc(128 * 2);
+    if (locale == NULL) {
+        return res == 0 ? -1 : res;
+    }
+    res = GetSystemDefaultLocaleName(locale, LOCALE_NAME_MAX_LENGTH);
+    if (res <= 0) {
+        // Returns 0 when failed to get locale information
+        // Fallback to en_US when failed
+        lstrcpynW(locale, L"en_US", LOCALE_NAME_MAX_LENGTH);
+    }
+    res = wsprintfW(command, L"echo \"LANG=%s.UTF-8\" > /etc/locale.conf", locale);
+    if (res <= 0) {
+        return res == 0 ? -1 : res;
+    }
+    hr = g_wslApi.WslLaunchInteractive(command, true, &exitCode);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
     // Create a user account.
     if (createUser) {
         Helpers::PrintMessage(MSG_CREATE_USER_PROMPT);
