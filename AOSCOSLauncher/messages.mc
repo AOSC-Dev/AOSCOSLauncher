@@ -1,5 +1,5 @@
 ﻿LanguageNames = (English=0x409:MSG00409)
-LanguageNames = (zh_CN=0x0804:MSG0804)
+LanguageNames = (zh_CN=0x804:MSG00804)
 
 
 MessageId=1001 SymbolicName=MSG_WSL_REGISTER_DISTRIBUTION_FAILED
