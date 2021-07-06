@@ -25,6 +25,7 @@
 #include <string_view>
 #include <vector>
 #include <wslapi.h>
+#include <strsafe.h>
 #include "WslApiLoader.h"
 #include "Helpers.h"
 #include "DistributionInfo.h"
