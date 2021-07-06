@@ -108,6 +108,9 @@ HRESULT SetDefaultUser(std::wstring_view userName)
 
 int wmain(int argc, wchar_t const *argv[])
 {
+    // Enable UTF-8 support.
+    setlocale(LC_ALL, ".UTF8");
+
     // Update the title bar of the console window.
     SetConsoleTitleW(DistributionInfo::WindowTitle.c_str());
 
