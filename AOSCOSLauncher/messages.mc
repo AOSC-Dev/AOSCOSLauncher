@@ -183,9 +183,9 @@ Language=zh_CN
 
 MessageId=1014 SymbolicName=MSG_LOCALE_ACQUIRSION_FAILURE
 Language=English
-Installation successful!
+WARNING: Failed to acquire current locale name. Falling back to en_US.
 .
 
 Language=zh_CN
-安装完成。
+警告：无法获取当前的系统语言信息。将使用默认值 en_US。
 .
