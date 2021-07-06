@@ -51,7 +51,6 @@ ULONG DistributionInfo::QueryUid(std::wstring_view userName)
         // Query the UID of the supplied username.
         std::wstring command = L"/usr/bin/id -u ";
         command += userName;
-        int returnValue = 0;
         HANDLE child;
         HRESULT hr = g_wslApi.WslLaunch(command.c_str(), true, GetStdHandle(STD_INPUT_HANDLE), writePipe, GetStdHandle(STD_ERROR_HANDLE), &child);
         if (SUCCEEDED(hr)) {
