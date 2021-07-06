@@ -12,6 +12,8 @@
 #define ARG_INSTALL_ROOT        L"--root"
 #define ARG_RUN                 L"run"
 #define ARG_RUN_C               L"-c"
+#define CMD_BUF_MAX_LENGTH      (LOCALE_NAME_MAX_LENGTH * 4)
+#define CMD_AOSC_SET_LOCALE     L"echo \"LANG=%s.UTF-8\" > /etc/locale.conf"
 
 // Helper class for calling WSL Functions:
 // https://msdn.microsoft.com/en-us/library/windows/desktop/mt826874(v=vs.85).aspx
@@ -19,6 +21,7 @@ WslApiLoader g_wslApi(DistributionInfo::Name);
 
 static HRESULT InstallDistribution(bool createUser);
 static HRESULT SetDefaultUser(std::wstring_view userName);
+static HRESULT GenerateLocaleCommand(LPWSTR command_buf);
 
 HRESULT InstallDistribution(bool createUser)
 {
@@ -49,21 +52,13 @@ HRESULT InstallDistribution(bool createUser)
     }
 
     // Set container locale according to Windows system locale
-    HRESULT res = -1;
-    LPWSTR locale = (LPWSTR)malloc(LOCALE_NAME_MAX_LENGTH * 2);
-    LPWSTR command = (LPWSTR)malloc(128 * 2);
-    if (locale == NULL) {
-        return res == 0 ? -1 : res;
+    LPWSTR command = (LPWSTR)malloc(CMD_BUF_MAX_LENGTH);
+    if (command == nullptr) {
+        return E_FAIL;
     }
-    res = GetSystemDefaultLocaleName(locale, LOCALE_NAME_MAX_LENGTH);
-    if (res <= 0) {
-        // Returns 0 when failed to get locale information
-        // Fallback to en_US when failed
-        lstrcpynW(locale, L"en_US", LOCALE_NAME_MAX_LENGTH);
-    }
-    res = wsprintfW(command, L"echo \"LANG=%s.UTF-8\" > /etc/locale.conf", locale);
-    if (res <= 0) {
-        return res == 0 ? -1 : res;
+    hr = GenerateLocaleCommand(command);
+    if (FAILED(hr)) {
+        return hr;
     }
     hr = g_wslApi.WslLaunchInteractive(command, true, &exitCode);
     if (FAILED(hr)) {
@@ -104,6 +99,38 @@ HRESULT SetDefaultUser(std::wstring_view userName)
     }
 
     return hr;
+}
+
+static HRESULT GenerateLocaleCommand(LPWSTR command_buf)
+{
+    // Generate the command which sets container locale according to system locale.
+    // The buffer given to this function should be big as CMD_BUF_MAX_LENGTH.
+    // This might be an AOSC OS specific functionality.
+
+    int result = 0;
+    HRESULT hr = ERROR_SUCCESS;
+
+    // Get a buffer which stores locale information.
+    LPWSTR locale = (LPWSTR)malloc(LOCALE_NAME_MAX_LENGTH * 2);
+    if (locale == nullptr) {
+        // Failed to get a buffer, we have nothing to do but bailing out.
+        return CO_E_INIT_MEMORY_ALLOCATOR;
+    }
+    result = GetUserDefaultLocaleName(locale, LOCALE_NAME_MAX_LENGTH);
+    if (result <= 0) {
+        // GetUserDefaultLocaleName() returns the string length of the locale name.
+        // If it fails, fallback to en_US.
+        hr = StringCchCopyW(locale, LOCALE_NAME_MAX_LENGTH, L"en_US");
+        if (FAILED(hr)) {
+            return E_FAIL;
+        }
+        Helpers::PrintMessage(MSG_LOCALE_ACQUIRSION_FAILURE);
+    }
+    hr = StringCchPrintfW(command_buf, CMD_BUF_MAX_LENGTH, CMD_AOSC_SET_LOCALE, locale);
+    if (FAILED(hr)) {
+        return E_FAIL;
+    }
+    return ERROR_SUCCESS;
 }
 
 int wmain(int argc, wchar_t const *argv[])
