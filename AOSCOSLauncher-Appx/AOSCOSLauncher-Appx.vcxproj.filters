@@ -8,6 +8,15 @@
       <UniqueIdentifier>3cd39ea5-301d-4878-9d47-b5dbb30f6c95</UniqueIdentifier>
       <Extensions>bmp;fbx;gif;jpg;jpeg;tga;tiff;tif;png</Extensions>
     </Filter>
+    <Filter Include="Strings">
+      <UniqueIdentifier>{bfecbf7b-55f5-42eb-806b-412349b740af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Strings\en-US">
+      <UniqueIdentifier>{152c5874-f045-4234-9e8c-b4a856a010a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Strings\zh-CN">
+      <UniqueIdentifier>{cfa0e7d9-2794-42c9-8f00-e62effeb6239}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Square150x150Logo.scale-200.png">
@@ -174,5 +183,13 @@
   <ItemGroup>
     <CustomBuild Include="$(targetname)" />
     <CustomBuild Include="$(SolutionDir)\$(platform)\$(Configuration)\launcher.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Strings\zh-CN\Resources.resw">
+      <Filter>Strings\zh-CN</Filter>
+    </PRIResource>
+    <PRIResource Include="Strings\en-US\Resources.resw">
+      <Filter>Strings\en-US</Filter>
+    </PRIResource>
   </ItemGroup>
 </Project>

@@ -181,4 +181,8 @@
   <ItemGroup>
     <None Include="Package.StoreAssociation.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Strings\en-US\Resources.resw" />
+    <PRIResource Include="Strings\zh-CN\Resources.resw" />
+  </ItemGroup>
 </Project>

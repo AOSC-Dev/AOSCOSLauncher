@@ -30,7 +30,7 @@ bool DistributionInfo::CreateUser(std::wstring_view userName)
     }
 
     // Change the user account's password.
-    commandLine = L"passwd ";
+    commandLine = L"source /etc/locale.conf && passwd ";
     commandLine += userName;
     hr = g_wslApi.WslLaunchInteractive(commandLine.c_str(), true, &exitCode);
     if ((FAILED(hr)) || (exitCode != 0)) {
