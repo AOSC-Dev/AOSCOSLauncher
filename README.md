@@ -1,3 +1,3 @@
 # AOSCOSLauncher
 
-The launcher of AOSC OS on Windows.
+The launcher of AOSC OS on WSL.
