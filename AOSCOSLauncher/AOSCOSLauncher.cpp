@@ -126,6 +126,13 @@ static HRESULT GenerateLocaleCommand(LPWSTR command_buf)
         }
         Helpers::PrintMessage(MSG_LOCALE_ACQUIRSION_FAILURE);
     }
+    int i = 0;
+    while (locale[i] != L'\0' || i < CMD_BUF_MAX_LENGTH) {
+        if (locale[i] == L'-') {
+            locale[i] = L'_';
+        }
+        i += 1;
+    }
     hr = StringCchPrintfW(command_buf, CMD_BUF_MAX_LENGTH, CMD_AOSC_SET_LOCALE, locale);
     if (FAILED(hr)) {
         return E_FAIL;
