@@ -12,7 +12,7 @@
 #define ARG_INSTALL_ROOT        L"--root"
 #define ARG_RUN                 L"run"
 #define ARG_RUN_C               L"-c"
-#define CMD_BUF_MAX_LENGTH      (LOCALE_NAME_MAX_LENGTH * 4)
+#define CMD_BUF_MAX_LENGTH      (LOCALE_NAME_MAX_LENGTH + 38)
 #define CMD_AOSC_SET_LOCALE     L"echo \"LANG=%s.UTF-8\" > /etc/locale.conf"
 
 // Helper class for calling WSL Functions:
@@ -52,7 +52,7 @@ HRESULT InstallDistribution(bool createUser)
     }
 
     // Set container locale according to Windows system locale
-    LPWSTR command = (LPWSTR)malloc(CMD_BUF_MAX_LENGTH);
+    wchar_t command[CMD_BUF_MAX_LENGTH];
     if (command == nullptr) {
         return E_FAIL;
     }
@@ -111,11 +111,7 @@ static HRESULT GenerateLocaleCommand(LPWSTR command_buf)
     HRESULT hr = ERROR_SUCCESS;
 
     // Get a buffer which stores locale information.
-    LPWSTR locale = (LPWSTR)malloc(LOCALE_NAME_MAX_LENGTH * 2);
-    if (locale == nullptr) {
-        // Failed to get a buffer, we have nothing to do but bailing out.
-        return CO_E_INIT_MEMORY_ALLOCATOR;
-    }
+    wchar_t locale[LOCALE_NAME_MAX_LENGTH];
     result = GetUserDefaultLocaleName(locale, LOCALE_NAME_MAX_LENGTH);
     if (result <= 0) {
         // GetUserDefaultLocaleName() returns the string length of the locale name.
@@ -126,12 +122,10 @@ static HRESULT GenerateLocaleCommand(LPWSTR command_buf)
         }
         Helpers::PrintMessage(MSG_LOCALE_ACQUIRSION_FAILURE);
     }
-    int i = 0;
-    while (locale[i] != L'\0' || i < CMD_BUF_MAX_LENGTH) {
+    for (int i = 0; locale[i] != L'\0' || i < LOCALE_NAME_MAX_LENGTH; i++) {
         if (locale[i] == L'-') {
             locale[i] = L'_';
         }
-        i += 1;
     }
     hr = StringCchPrintfW(command_buf, CMD_BUF_MAX_LENGTH, CMD_AOSC_SET_LOCALE, locale);
     if (FAILED(hr)) {
