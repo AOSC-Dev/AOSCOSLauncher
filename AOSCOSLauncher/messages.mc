@@ -8,7 +8,7 @@ WslRegisterDistribution failed with error: 0x%1!x!
 .
 
 Language=zh_CN
-方法 WslRegisterDistribution 执行时出错: 0x%1!x!
+函数 WslRegisterDistribution 执行时出错: 0x%1!x!
 .
 
 
@@ -18,7 +18,7 @@ WslGetDistributionConfiguration failed with error: 0x%1!x!
 .
 
 Language=zh_CN
-方法 WslGetDistributionConfiguration 执行时出错: 0x%1!x!
+函数 WslGetDistributionConfiguration 执行时出错: 0x%1!x!
 .
 
 
@@ -28,7 +28,7 @@ WslLaunchInteractive %1 failed with error: 0x%2!x!
 .
 
 Language=zh_CN
-方法 WslLaunchInteractive 执行命令 `%1` 时出错: 0x%2!x!
+函数 WslLaunchInteractive 执行命令 `%1` 时出错: 0x%2!x!
 .
 
 
@@ -38,7 +38,7 @@ WslLaunch %1 failed with error: 0x%2!x!
 .
 
 Language=zh_CN
-方法 WslLaunch 执行命令 `%1` 时出错: 0x%2!x!
+函数 WslLaunch 执行命令 `%1` 时出错: 0x%2!x!
 .
 
 
@@ -176,7 +176,7 @@ Please select Reset from App Settings or uninstall and reinstall the app.
 .
 
 Language=zh_CN
-此发行版的实例将被损坏。
+此发行版的实例已被损坏。
 请在应用设置中重置该应用，或卸载并重新安装该应用。
 .
 
