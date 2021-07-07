@@ -173,5 +173,6 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="$(targetname)" />
+    <CustomBuild Include="$(SolutionDir)\$(platform)\$(Configuration)\launcher.exe" />
   </ItemGroup>
 </Project>
