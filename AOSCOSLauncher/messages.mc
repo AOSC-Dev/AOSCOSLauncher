@@ -181,7 +181,17 @@ Language=zh_CN
 .
 
 
-MessageId=1014 SymbolicName=MSG_LOCALE_ACQUIRSION_FAILURE
+MessageId=1014 SymbolicName=MSG_SETTING_LOCALE
+Language=English
+Setting locale for the container...
+.
+
+Language=zh_CN
+正在为容器配置语言和本地化...
+.
+
+
+MessageId=1015 SymbolicName=MSG_LOCALE_ACQUIRSION_FAILURE
 Language=English
 WARNING: Failed to acquire current locale name. Falling back to en_US.
 .

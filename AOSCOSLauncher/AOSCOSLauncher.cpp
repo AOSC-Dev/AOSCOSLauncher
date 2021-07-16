@@ -4,6 +4,7 @@
 //
 
 #include "stdafx.h"
+#include "LocaleHelper.h"
 
 // Commandline arguments: 
 #define ARG_CONFIG              L"config"
@@ -21,7 +22,6 @@ WslApiLoader g_wslApi(DistributionInfo::Name);
 
 static HRESULT InstallDistribution(bool createUser);
 static HRESULT SetDefaultUser(std::wstring_view userName);
-static HRESULT GenerateLocaleCommand(LPWSTR command_buf);
 
 HRESULT InstallDistribution(bool createUser)
 {
@@ -53,10 +53,11 @@ HRESULT InstallDistribution(bool createUser)
 
     // Set container locale according to Windows system locale
     wchar_t command[CMD_BUF_MAX_LENGTH];
+    Helpers::PrintMessage(MSG_SETTING_LOCALE);
     if (command == nullptr) {
         return E_FAIL;
     }
-    hr = GenerateLocaleCommand(command);
+    hr = LocaleHelper::GenerateLocaleCommand(command);
     if (FAILED(hr)) {
         return hr;
     }
@@ -99,39 +100,6 @@ HRESULT SetDefaultUser(std::wstring_view userName)
     }
 
     return hr;
-}
-
-static HRESULT GenerateLocaleCommand(LPWSTR command_buf)
-{
-    // Generate the command which sets container locale according to system locale.
-    // The buffer given to this function should be big as CMD_BUF_MAX_LENGTH.
-    // This might be an AOSC OS specific functionality.
-
-    int result = 0;
-    HRESULT hr = ERROR_SUCCESS;
-
-    // Get a buffer which stores locale information.
-    wchar_t locale[LOCALE_NAME_MAX_LENGTH];
-    result = GetUserDefaultLocaleName(locale, LOCALE_NAME_MAX_LENGTH);
-    if (result <= 0) {
-        // GetUserDefaultLocaleName() returns the string length of the locale name.
-        // If it fails, fallback to en_US.
-        hr = StringCchCopyW(locale, LOCALE_NAME_MAX_LENGTH, L"en_US");
-        if (FAILED(hr)) {
-            return E_FAIL;
-        }
-        Helpers::PrintMessage(MSG_LOCALE_ACQUIRSION_FAILURE);
-    }
-    for (int i = 0; locale[i] != L'\0' || i < LOCALE_NAME_MAX_LENGTH; i++) {
-        if (locale[i] == L'-') {
-            locale[i] = L'_';
-        }
-    }
-    hr = StringCchPrintfW(command_buf, CMD_BUF_MAX_LENGTH, CMD_AOSC_SET_LOCALE, locale);
-    if (FAILED(hr)) {
-        return E_FAIL;
-    }
-    return ERROR_SUCCESS;
 }
 
 int wmain(int argc, wchar_t const *argv[])
