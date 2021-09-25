@@ -75,5 +75,5 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: AppxPackages_${{matrix.BUILD_PLATFORM}}
-        path: AOSCOSLauncher-Appx\AppxPackages_${{matrix.BUILD_PLATFORM}}
+        name: AppxPackages_${{matrix.platform}}
+        path: AOSCOSLauncher-Appx\AppxPackages_${{matrix.platform}}
