@@ -45,6 +45,15 @@ jobs:
         if ((Get-FileHash -Path .\ARM64\install.tar.gz).Hash -ne "${{env.ARM64_TAR_FILE_HASH}}") {throw "ARM64 tar file hash not match."}
       shell: pwsh
 
+    - name: Download package signing certificate
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      env:
+        PACKAGE_SIGNING_CERTIFICATE: ${{secrets.PACKAGE_SIGNING_CERTIFICATE}}
+      run: |
+        "${{env.PACKAGE_SIGNING_CERTIFICATE}}" > AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx
+        certutil.exe -decode .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey.pfx 
+      shell: pwsh
+
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
