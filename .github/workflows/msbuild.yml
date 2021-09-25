@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
     - uses: actions/checkout@v2
@@ -37,10 +37,10 @@ jobs:
       run: |
         New-Item -Path x64 -ItemType Directory
         Invoke-WebRequest -Uri ${{env.X64_TAR_FILE_ADDRESS}} -OutFile x64\install.tar.gz
-        if ((Get-FileHash -Path .\x64\install.tar.gz).Hash -ne ${{env.X64_TAR_FILE_HASH}}) {throw "x64 tar file hash not match."}
+        if ((Get-FileHash -Path .\x64\install.tar.gz).Hash -ne "${{env.X64_TAR_FILE_HASH}}") {throw "x64 tar file hash not match."}
         New-Item -Path ARM64 -ItemType Directory
         Invoke-WebRequest -Uri ${{env.ARM64_TAR_FILE_ADDRESS}} -OutFile ARM64\install.tar.gz
-        if ((Get-FileHash -Path .\ARM64\install.tar.gz).Hash -ne ${{env.ARM64_TAR_FILE_HASH}}) {throw "ARM64 tar file hash not match."}
+        if ((Get-FileHash -Path .\ARM64\install.tar.gz).Hash -ne "${{env.ARM64_TAR_FILE_HASH}}") {throw "ARM64 tar file hash not match."}
       shell: pwsh
 
     - name: Build
