@@ -11,7 +11,7 @@ env:
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
-  BUILD_PLATFORM: x64|ARM64
+  BUILD_PLATFORM: x64,ARM64
   APPX_PACKAGE_DIR: AppxPackages
   X64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-amd64/container/aosc-os_container_20210602_amd64.tar.xz
   X64_TAR_FILE_HASH: 975a21b5a1a27ff97a142494ec15cb6566ecce2572046704c89e3d8a4a297ddb
