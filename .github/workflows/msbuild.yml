@@ -4,14 +4,13 @@ on: [push]
 
 env:
   # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: AOSCOSLauncher.sln
+  SOLUTION_FILE_PATH: .
 
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   BUILD_CONFIGURATION: Release
 
-  BUILD_PLATFORM: x64,ARM64
   APPX_PACKAGE_DIR: AppxPackages
   X64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-amd64/container/aosc-os_container_20210602_amd64.tar.xz
   X64_TAR_FILE_HASH: 975a21b5a1a27ff97a142494ec15cb6566ecce2572046704c89e3d8a4a297ddb
@@ -21,6 +20,9 @@ env:
 jobs:
   build:
     runs-on: windows-2019
+    strategy:
+      matrix:
+        platform: [ARM64, x64]
 
     steps:
     - uses: actions/checkout@v2
@@ -32,17 +34,24 @@ jobs:
             
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+      run: nuget.exe restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Download tar files
+    - name: Download tar files for ARM64
+      if: matrix.platform == 'ARM64'
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        New-Item -Path x64 -ItemType Directory
-        Invoke-WebRequest -Uri ${{env.X64_TAR_FILE_ADDRESS}} -OutFile x64\install.tar.gz
-        if ((Get-FileHash -Path .\x64\install.tar.gz).Hash -ne "${{env.X64_TAR_FILE_HASH}}") {throw "x64 tar file hash not match."}
-        New-Item -Path ARM64 -ItemType Directory
-        Invoke-WebRequest -Uri ${{env.ARM64_TAR_FILE_ADDRESS}} -OutFile ARM64\install.tar.gz
+        New-Item -Path .\ARM64 -ItemType Directory
+        Invoke-WebRequest -Uri ${{env.ARM64_TAR_FILE_ADDRESS}} -OutFile .\ARM64\install.tar.gz
         if ((Get-FileHash -Path .\ARM64\install.tar.gz).Hash -ne "${{env.ARM64_TAR_FILE_HASH}}") {throw "ARM64 tar file hash not match."}
+      shell: pwsh
+
+    - name: Download tar files for x64
+      if: matrix.platform == 'x64'
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        New-Item -Path .\x64 -ItemType Directory
+        Invoke-WebRequest -Uri ${{env.X64_TAR_FILE_ADDRESS}} -OutFile .\x64\install.tar.gz
+        if ((Get-FileHash -Path .\x64\install.tar.gz).Hash -ne "${{env.X64_TAR_FILE_HASH}}") {throw "x64 tar file hash not match."}
       shell: pwsh
 
     - name: Download package signing certificate
@@ -50,12 +59,21 @@ jobs:
       env:
         PACKAGE_SIGNING_CERTIFICATE: ${{secrets.PACKAGE_SIGNING_CERTIFICATE}}
       run: |
-        "${{env.PACKAGE_SIGNING_CERTIFICATE}}" > AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx
+        "${{env.PACKAGE_SIGNING_CERTIFICATE}}" > .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx
         certutil.exe -decode .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey.pfx 
       shell: pwsh
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
+      env:
+        BUILD_PLATFORM: ${{matrix.platform}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform="${{env.BUILD_PLATFORM}}" /p:AppxBundlePlatforms="${{env.BUILD_PLATFORM}}" /p:AppxPackageDir=${{env.APPX_PACKAGE_DIR}} /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload ${{env.SOLUTION_FILE_PATH}}
+      run: |
+        msbuild.exe /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=${{BUILD_PLATFORM}} /p:AppxBundlePlatforms=${{BUILD_PLATFORM}} /p:AppxPackageDir=${{env.APPX_PACKAGE_DIR}}_${{BUILD_PLATFORM}} /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: AppxPackages_${{BUILD_PLATFORM}}
+        path: AOSCOSLauncher-Appx\AppxPackages_${{BUILD_PLATFORM}}
