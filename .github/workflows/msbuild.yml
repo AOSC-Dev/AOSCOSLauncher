@@ -36,7 +36,7 @@ jobs:
       run: nuget.exe restore $env:SOLUTION_FILE_PATH
 
     - name: Download tar files for ARM64
-      if: matrix.platform == 'ARM64'
+      if: ${{matrix.platform == 'ARM64'}}
       run: |
         New-Item -Path .\ARM64 -ItemType Directory
         Invoke-WebRequest -Uri $env:ARM64_TAR_FILE_ADDRESS -OutFile .\ARM64\install.tar.gz
@@ -44,7 +44,7 @@ jobs:
       shell: pwsh
 
     - name: Download tar files for x64
-      if: matrix.platform == 'x64'
+      if: ${{matrix.platform == 'x64'}}
       run: |
         New-Item -Path .\x64 -ItemType Directory
         Invoke-WebRequest -Uri $env:X64_TAR_FILE_ADDRESS -OutFile .\x64\install.tar.gz
