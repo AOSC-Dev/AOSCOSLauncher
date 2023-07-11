@@ -175,6 +175,11 @@ Please enable the Virtual Machine Platform Windows feature and ensure virtualiza
 For information please visit https://aka.ms/enablevirtualization
 .
 
+Language=zh_CN
+请启用“虚拟机平台” Windows 功能，并确保 BIOS 中已启用虚拟化。
+详情请访问: https://aka.ms/enablevirtualization
+.
+
 
 MessageId=1015 SymbolicName=MSG_LOCALE_ACQUIRSION_FAILURE
 Language=English
