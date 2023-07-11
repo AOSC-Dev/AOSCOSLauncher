@@ -3,11 +3,6 @@
 This is the C++ reference implementation for a Windows Subsystem for Linux (WSL) distribution installer/launcher application. Every distro package must include a launcher app, which is responsible for completing installation & registration of your distro with WSL, and for launching new distro instances atop WSL.
 
 Once you've built your distro launcher, packaged it along with the required art assets, manifest, and distro.tar.gz, and digitally signed the package, you will be able to sideload your distro on your own machine(s).
-  
-## Important! 
-Before publishing your distro to the Windows Store, you must first reach-out to and get approval from the WSL team: wslpartners@microsoft.com. 
-
-Without testing and approval from the WSL team, distros submitted to the store will be rejected. This process is required in order to ensure the quality and integrity of the WSL distro ecosystem, and to safeguard our users.
 
 ## Goals
 The goal of this project is to enable:
@@ -143,11 +138,10 @@ Once complete, you should see a Console window with your distro running inside i
 If you are a distro vendor and want to publish  your distro to the Windows store, you will need to complete some pre-requisite steps to ensure the quality and integrity of the WSL distro ecosystem, and to safeguard our users:
 
 #### Publishing Pre-Requisites
-1. Reach out to the WSL team to introduce your distro, yourself, and your team
-1. Agree with the WSL team on a testing and publishing plan
-1. Complete any required paperwork
 1. Sign up for an "Company" Windows Developer Account https://developer.microsoft.com/en-us/store/register. 
     > Note: This can take a week or more since you'll be required to confirm your organization's identity with an independent verification service via email and/or telephone.
+1. Follow the guides to publish your distro as a UWP app: https://docs.microsoft.com/en-us/windows/uwp/publish/
+1. [Optional] Reach out to the WSL team at wslpartners@microsoft.com to introduce us to your distro!
 
 #### Publishing Code changes
 You'll also need to change a few small things in your project to prepare your distro for publishing to the Windows store

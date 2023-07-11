@@ -157,18 +157,6 @@ Language=zh_CN
 .
 
 
-MessageId=1012 SymbolicName=MSG_MISSING_OPTIONAL_COMPONENT
-Language=English
-The Windows Subsystem for Linux optional component is not enabled. Please enable it and try again.
-See https://aka.ms/wslinstall for details.
-.
-
-Language=zh_CN
-未启用适用于 Linux 的 Windows 子系统可选功能。请先启用，然后再试一次。
-详情请访问 https://aka.ms/wslinstall 。
-.
-
-
 MessageId=1013 SymbolicName=MSG_INSTALL_ALREADY_EXISTS
 Language=English
 The distribution installation has become corrupted.
@@ -181,7 +169,14 @@ Language=zh_CN
 .
 
 
-MessageId=1014 SymbolicName=MSG_LOCALE_ACQUIRSION_FAILURE
+MessageId=1014 SymbolicName=MSG_ENABLE_VIRTUALIZATION
+Language=English
+Please enable the Virtual Machine Platform Windows feature and ensure virtualization is enabled in the BIOS.
+For information please visit https://aka.ms/enablevirtualization
+.
+
+
+MessageId=1015 SymbolicName=MSG_LOCALE_ACQUIRSION_FAILURE
 Language=English
 WARNING: Failed to acquire current locale name. Falling back to en_US.
 .
