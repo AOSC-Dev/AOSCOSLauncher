@@ -3,15 +3,6 @@ name: MSBuild
 on: [push]
 
 env:
-  # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: .
-
-  # Configuration type to build.
-  # You can convert this to a build matrix if you need coverage of multiple configuration types.
-  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-  BUILD_CONFIGURATION: Release
-
-  APPX_PACKAGE_DIR: AppxPackages
   ARM64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-arm64/wsl/aosc-os_wsl_20240101_arm64.tar.gz
   ARM64_TAR_FILE_HASH: d59044fd00fa9c0ec4cf77a38b1b9be715df82dc2bc84385f11229319b1457a4
   X64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-amd64/wsl/aosc-os_wsl_20240101_amd64.tar.gz
@@ -20,9 +11,6 @@ env:
 jobs:
   build:
     runs-on: windows-2022
-    strategy:
-      matrix:
-        platform: [ARM64, x64]
 
     steps:
     - uses: actions/checkout@v4
@@ -31,12 +19,11 @@ jobs:
       uses: microsoft/setup-msbuild@v1
       with:
         vs-prerelease: true
-            
+
     - name: Restore NuGet packages
-      run: nuget.exe restore $env:SOLUTION_FILE_PATH
+      run: nuget.exe restore .
 
     - name: Download tar files for ARM64
-      if: ${{matrix.platform == 'ARM64'}}
       run: |
         New-Item -Path .\ARM64 -ItemType Directory
         Invoke-WebRequest -Uri $env:ARM64_TAR_FILE_ADDRESS -OutFile .\ARM64\install.tar.gz
@@ -44,31 +31,26 @@ jobs:
       shell: pwsh
 
     - name: Download tar files for x64
-      if: ${{matrix.platform == 'x64'}}
       run: |
         New-Item -Path .\x64 -ItemType Directory
         Invoke-WebRequest -Uri $env:X64_TAR_FILE_ADDRESS -OutFile .\x64\install.tar.gz
         if ((Get-FileHash -Path .\x64\install.tar.gz).Hash -ne "$env:X64_TAR_FILE_HASH") {throw "x64 tar file hash not match."}
       shell: pwsh
 
-    - name: Download package signing certificate
-      env:
-        PACKAGE_SIGNING_CERTIFICATE: ${{secrets.PACKAGE_SIGNING_CERTIFICATE}}
-      run: |
-        "$env:PACKAGE_SIGNING_CERTIFICATE" > .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx
-        certutil.exe -decode .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey_Base64.pfx .\AOSCOSLauncher-Appx\AOSCOSLauncher-Appx_TemporaryKey.pfx 
-      shell: pwsh
-
     - name: Build
-      env:
-        BUILD_PLATFORM: ${{matrix.platform}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: |
-        msbuild.exe /m /p:Configuration=$env:BUILD_CONFIGURATION /p:Platform=$env:BUILD_PLATFORM /p:AppxBundlePlatforms=$env:BUILD_PLATFORM /p:AppxPackageDir=${env:APPX_PACKAGE_DIR}_$env:BUILD_PLATFORM /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload $env:SOLUTION_FILE_PATH
+        msbuild.exe /m /p:Configuration=Release /p:Platform="x64|ARM64" /p:AppxBundlePlatforms="x64|ARM64" /p:AppxPackageDir=AppxPackages_x64_arm64 /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload .
 
-    - name: Upload artifact
+    - name: Upload CI artifact
       uses: actions/upload-artifact@v4
       with:
-        name: AppxPackages_${{matrix.platform}}
-        path: AOSCOSLauncher-Appx\AppxPackages_${{matrix.platform}}
+        name: AppxPackages_x64_arm64_appxupload
+        path: AOSCOSLauncher-Appx\AppxPackages_x64_arm64\*.appxupload
+
+    - name: Upload sideload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AppxPackages_x64_arm64_Test
+        path: AOSCOSLauncher-Appx\AppxPackages_x64_arm64\AOSCOSLauncher-Appx_*_Test
