@@ -41,7 +41,7 @@ jobs:
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: |
-        msbuild.exe /m /p:Configuration=Release /p:Platform="x64|ARM64" /p:AppxBundlePlatforms="x64|ARM64" /p:AppxPackageDir=AppxPackages_x64_arm64 /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload .
+        msbuild.exe /m /p:Configuration=Release /p:AppxBundlePlatforms="x64|ARM64" /p:AppxPackageDir=AppxPackages_x64_arm64 /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload .
 
     - name: Upload CI artifact
       uses: actions/upload-artifact@v4
