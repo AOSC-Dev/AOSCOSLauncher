@@ -46,10 +46,10 @@ HRESULT InstallDistribution(bool createUser)
     }
 
     // Configure per distro launch settings with wslconf
-    hr = g_wslApi.WslLaunchInteractive(L"echo \"# Enable extra metadata options by default\n[automount]\noptions = \\\"metadata,umask=22,fmask=11\\\"\" > /etc/wsl.conf", true, &exitCode);
-    if (FAILED(hr)) {
-        return hr;
-    }
+    //hr = g_wslApi.WslLaunchInteractive(L"echo \"# Enable extra metadata options by default\n[automount]\noptions = \\\"metadata,umask=22,fmask=11\\\"\" > /etc/wsl.conf", true, &exitCode);
+    //if (FAILED(hr)) {
+    //    return hr;
+    //}
 
     // Set container locale according to Windows system locale
     wchar_t command[CMD_BUF_MAX_LENGTH];
