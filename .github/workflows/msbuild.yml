@@ -12,23 +12,23 @@ env:
   BUILD_CONFIGURATION: Release
 
   APPX_PACKAGE_DIR: AppxPackages
-  X64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-amd64/container/aosc-os_container_20210602_amd64.tar.xz
-  X64_TAR_FILE_HASH: 975a21b5a1a27ff97a142494ec15cb6566ecce2572046704c89e3d8a4a297ddb
-  ARM64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-arm64/container/aosc-os_container_20210602_arm64.tar.xz
-  ARM64_TAR_FILE_HASH: 88bdea5f6a533d1635d9f9f697917c5e9c7f86c211965e4279d5644e343d5e52
+  ARM64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-arm64/wsl/aosc-os_wsl_20240101_arm64.tar.gz
+  ARM64_TAR_FILE_HASH: d59044fd00fa9c0ec4cf77a38b1b9be715df82dc2bc84385f11229319b1457a4
+  X64_TAR_FILE_ADDRESS: https://releases.aosc.io/os-amd64/wsl/aosc-os_wsl_20240101_amd64.tar.gz
+  X64_TAR_FILE_HASH: f6d7184cbe1a4dace6fcbd0fb9fef5c9af371441c2fbbac790a812e77c0ec235
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       matrix:
         platform: [ARM64, x64]
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@v4
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.3.1
+      uses: microsoft/setup-msbuild@v1
       with:
         vs-prerelease: true
             
