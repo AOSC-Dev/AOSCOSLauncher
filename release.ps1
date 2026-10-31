@@ -570,6 +570,91 @@ function New-SideloadZip {
     return $zipPath
 }
 
+function New-StoreUpload {
+    param(
+        [string]$StoreBundle,
+        [string]$Version,
+        [string]$OutputDirectory
+    )
+
+    $symbolPackages = @()
+    foreach ($platform in @('x64', 'ARM64')) {
+        $pdbPath = Join-Path $Root "$platform\Release\launcher.pdb"
+        if (-not (Test-Path -LiteralPath $pdbPath -PathType Leaf)) {
+            throw "Symbol file not found: $pdbPath"
+        }
+
+        $symbolPath = Join-Path $OutputDirectory "AOSCOSLauncher-Appx_${Version}_${platform}.appxsym"
+        if (Test-Path -LiteralPath $symbolPath) {
+            Remove-Item -LiteralPath $symbolPath -Force
+        }
+        $symbolArchive = [System.IO.Compression.ZipFile]::Open($symbolPath, [System.IO.Compression.ZipArchiveMode]::Create)
+        try {
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $symbolArchive,
+                $pdbPath,
+                'launcher.pdb',
+                [System.IO.Compression.CompressionLevel]::NoCompression
+            ) | Out-Null
+        }
+        finally {
+            $symbolArchive.Dispose()
+        }
+        $symbolPackages += $symbolPath
+    }
+
+    $uploadPath = Join-Path $OutputDirectory "AOSCOS_${Version}_Store_x64_ARM64.appxupload"
+    if (Test-Path -LiteralPath $uploadPath) {
+        Remove-Item -LiteralPath $uploadPath -Force
+    }
+    $uploadArchive = [System.IO.Compression.ZipFile]::Open($uploadPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $uploadArchive,
+            $StoreBundle,
+            [System.IO.Path]::GetFileName($StoreBundle),
+            [System.IO.Compression.CompressionLevel]::NoCompression
+        ) | Out-Null
+        foreach ($symbolPackage in $symbolPackages) {
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $uploadArchive,
+                $symbolPackage,
+                [System.IO.Path]::GetFileName($symbolPackage),
+                [System.IO.Compression.CompressionLevel]::NoCompression
+            ) | Out-Null
+        }
+    }
+    finally {
+        $uploadArchive.Dispose()
+    }
+
+    $uploadArchive = [System.IO.Compression.ZipFile]::OpenRead($uploadPath)
+    try {
+        foreach ($requiredEntry in @([System.IO.Path]::GetFileName($StoreBundle)) + @($symbolPackages | ForEach-Object { [System.IO.Path]::GetFileName($_) })) {
+            if ($null -eq $uploadArchive.GetEntry($requiredEntry)) {
+                throw "$uploadPath does not contain $requiredEntry."
+            }
+        }
+    }
+    finally {
+        $uploadArchive.Dispose()
+    }
+    foreach ($symbolPackage in $symbolPackages) {
+        $symbolArchive = [System.IO.Compression.ZipFile]::OpenRead($symbolPackage)
+        try {
+            if ($null -eq $symbolArchive.GetEntry('launcher.pdb')) {
+                throw "$symbolPackage does not contain launcher.pdb."
+            }
+        }
+        finally {
+            $symbolArchive.Dispose()
+        }
+    }
+
+    Write-Host "Verified Store upload with both architectures and symbol packages: $uploadPath"
+    return $uploadPath
+}
+
 $msbuild = Find-MSBuild
 $sdk = Find-SdkTools
 $systemTar = Join-Path $env:SystemRoot 'System32\tar.exe'
@@ -621,6 +706,7 @@ Test-PackageSignature -PackagePath $x64Package -SignTool $sdk.SignTool -Thumbpri
 Test-PackageSignature -PackagePath $arm64Package -SignTool $sdk.SignTool -Thumbprint $CertificateThumbprint
 
 $storeBundle = New-SignedBundle -Name "AOSCOS_${packageVersion}_Store_x64_ARM64" -Packages @($x64Package, $arm64Package) -Architectures @('x64', 'arm64') -Version $packageVersion -BundleDirectory $outputDirectory -MakeAppx $sdk.MakeAppx -SignTool $sdk.SignTool
+$storeUpload = New-StoreUpload -StoreBundle $storeBundle -Version $packageVersion -OutputDirectory $outputDirectory
 $x64Zip = New-SideloadZip -PackagePath $x64Package -Name "AOSCOSLauncher-Appx_${packageVersion}_x64_Test" -OutputDirectory $outputDirectory -Thumbprint $CertificateThumbprint
 $arm64Zip = New-SideloadZip -PackagePath $arm64Package -Name "AOSCOSLauncher-Appx_${packageVersion}_arm64_Test" -OutputDirectory $outputDirectory -Thumbprint $CertificateThumbprint
 
@@ -632,5 +718,5 @@ $checksumPath = Join-Path $outputDirectory 'SHA256SUMS'
 [System.IO.File]::WriteAllText($checksumPath, ($checksumLines -join "`n") + "`n", [System.Text.Encoding]::ASCII)
 
 Write-Host "Release artifacts: $outputDirectory"
-Get-Item -LiteralPath $storeBundle, $x64Zip, $arm64Zip, $checksumPath |
+Get-Item -LiteralPath $storeUpload, $x64Zip, $arm64Zip, $checksumPath |
     Select-Object Name, Length, FullName

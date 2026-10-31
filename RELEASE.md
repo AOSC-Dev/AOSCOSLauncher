@@ -45,7 +45,7 @@ The script performs the complete local release:
 3. Locate or generate a current-user certificate matching the existing Store publisher.
 4. Build Release x64 and ARM64 launchers and signed architecture packages.
 5. Verify each package's architecture, version, launcher, embedded rootfs hash, signer, and signature integrity.
-6. Create and sign a combined Store bundle and verify its contents.
+6. Create and sign a combined Store bundle, verify its contents, and package it with x64 and ARM64 symbol packages in an `.appxupload`.
 7. Package the complete toolchain-generated x64 and ARM64 `_Test` folders as ZIPs, including `Install.ps1`, the signed `.appx`, and the matching public `.cer`.
 8. Require each GitHub asset to be strictly smaller than 2 GiB and write `SHA256SUMS` with LF line endings.
 
@@ -58,13 +58,14 @@ The certificate is self-signed. Signature verification accepts only the expected
 Artifacts are written to `artifacts/release/14.0.0.0/`:
 
 ```text
+AOSCOS_14.0.0.0_Store_x64_ARM64.appxupload
 AOSCOS_14.0.0.0_Store_x64_ARM64.appxbundle
 AOSCOSLauncher-Appx_14.0.0.0_x64_Test.zip
 AOSCOSLauncher-Appx_14.0.0.0_arm64_Test.zip
 SHA256SUMS
 ```
 
-The Store bundle contains both architectures. Only the two architecture-specific sideload ZIPs and `SHA256SUMS` are GitHub release assets.
+The Store `.appxbundle` contains both architectures. The `.appxupload` wraps that bundle with both architectures' symbol packages for Partner Center. Only the two architecture-specific sideload ZIPs and `SHA256SUMS` are GitHub release assets.
 
 Verify the GitHub assets from Git Bash:
 
@@ -109,13 +110,13 @@ Download the release into a separate directory and rerun `sha256sum -c SHA256SUM
 
 The Store submission API can update an existing app; it cannot reserve a new app name or replace the initial app-creation steps. Partner Center credentials are read from `STORE_TENANT_ID`, `STORE_CLIENT_ID`, and `STORE_CLIENT_SECRET`. Supply them through a secret manager or the current process environment, never through repository files or logged command arguments.
 
-Submit only the combined bundle:
+Submit only the combined `.appxupload` container:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\submit-store.ps1 `
-  -StoreBundle artifacts/release/14.0.0.0/AOSCOS_14.0.0.0_Store_x64_ARM64.appxbundle
+  -StoreBundle artifacts/release/14.0.0.0/AOSCOS_14.0.0.0_Store_x64_ARM64.appxupload
 ```
 
-The submission script creates a new submission from the current Store metadata, marks old packages for deletion, adds the combined bundle, uploads a ZIP, commits it for certification, and verifies the remote status and package name. It streams the upload and never logs credentials or the signed upload URL. It does not wait for certification or Store availability.
+The submission script also accepts the combined `.appxbundle` directly. It creates a new submission from the current Store metadata, marks old packages for deletion, adds the Store container, uploads a ZIP, commits it for certification, and verifies the remote status and package name. It streams the upload and never logs credentials or the signed upload URL. It does not wait for certification or Store availability.
 
 If Partner Center already has a pending submission, the script stops rather than overwriting it. To resume a submission created for this release, add `-SubmissionId <id>` to the command. A failed upload or commit must be treated as an incomplete release, not reported as published.

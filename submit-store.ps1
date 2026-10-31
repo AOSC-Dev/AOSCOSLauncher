@@ -159,8 +159,8 @@ function Send-SubmissionZip {
 }
 
 $bundle = Get-Item -LiteralPath $StoreBundle -ErrorAction Stop
-if ($bundle.Extension -ine '.appxbundle') {
-    throw "StoreBundle must be an .appxbundle file: $StoreBundle"
+if ($bundle.Extension -notin @('.appxbundle', '.appxupload')) {
+    throw "StoreBundle must be an .appxbundle or .appxupload file: $StoreBundle"
 }
 if ([string]::IsNullOrWhiteSpace($PackageZip)) {
     $PackageZip = Join-Path $bundle.DirectoryName 'StoreSubmission.zip'
