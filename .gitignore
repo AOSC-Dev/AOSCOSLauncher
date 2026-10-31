@@ -296,3 +296,6 @@ AOSCOSLauncher/messages.h
 *.dll
 *.exe
 *.tar.gz
+*.wsl
+*.wsl.sha256sum
+.env
