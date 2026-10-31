@@ -27,12 +27,11 @@ function Get-StoreAccessToken {
 
     $client = [System.Net.Http.HttpClient]::new()
     try {
-        $form = @{
-            grant_type = 'client_credentials'
-            client_id = $env:STORE_CLIENT_ID
-            client_secret = $env:STORE_CLIENT_SECRET
-            resource = $ApiResource
-        }
+        $form = [System.Collections.Generic.Dictionary[string, string]]::new()
+        $form.Add('grant_type', 'client_credentials')
+        $form.Add('client_id', $env:STORE_CLIENT_ID)
+        $form.Add('client_secret', $env:STORE_CLIENT_SECRET)
+        $form.Add('resource', $ApiResource)
         $content = [System.Net.Http.FormUrlEncodedContent]::new($form)
         $tokenUri = "https://login.microsoftonline.com/$env:STORE_TENANT_ID/oauth2/token"
         $response = $client.PostAsync($tokenUri, $content).GetAwaiter().GetResult()
@@ -61,6 +60,7 @@ function Invoke-StoreApi {
     )
 
     $client = [System.Net.Http.HttpClient]::new()
+    $request = $null
     try {
         $client.Timeout = [TimeSpan]::FromMinutes(10)
         $httpMethod = [System.Net.Http.HttpMethod]::new($Method)
