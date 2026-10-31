@@ -93,13 +93,14 @@ gh release create v14.0.0 `
   artifacts/release/14.0.0.0/AOSCOS_14.0.0.0_ARM64.appxbundle `
   artifacts/release/14.0.0.0/SHA256SUMS `
   --title "AOSC OS on WSL 14.0.0" `
-  --generate-notes
+  --generate-notes `
+  --repo AOSC-Dev/AOSCOSLauncher
 ```
 
 Verify the remote release, its assets, and their sizes:
 
 ```powershell
-gh release view v14.0.0 --json url,isDraft,assets
+gh release view v14.0.0 --repo AOSC-Dev/AOSCOSLauncher --json url,isDraft,assets
 ```
 
 Download the release into a separate directory and rerun `sha256sum -c SHA256SUMS` there to verify the uploaded bytes.
