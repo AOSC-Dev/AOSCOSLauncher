@@ -194,7 +194,8 @@ function Build-ArchitecturePackage {
         [string]$Platform,
         [string]$BuildRoot,
         [string]$MSBuild,
-        [string]$SdkVersion
+        [string]$SdkVersion,
+        [string]$CertificateThumbprint
     )
 
     $packageDirectory = Join-Path $BuildRoot $Platform
@@ -216,10 +217,12 @@ function Build-ArchitecturePackage {
     Write-Host "Packaging Release|$Platform"
     $appxArguments = $commonArguments + @(
         '/p:AppxBundle=Never',
-        '/p:AppxPackageSigningEnabled=False',
+        '/p:AppxPackageSigningEnabled=True',
+        "/p:PackageCertificateThumbprint=$CertificateThumbprint",
+        '/p:PackageCertificateKeyFile=',
         '/p:BuildAppxUploadPackageForUap=False',
         '/p:GenerateTemporaryStoreCertificate=False',
-        '/p:GenerateTestArtifacts=False',
+        '/p:GenerateTestArtifacts=True',
         "/p:AppxPackageDir=$packageDirectory"
     )
     Invoke-Native -FilePath $MSBuild -Arguments (@((Join-Path $Root 'AOSCOSLauncher-Appx\AOSCOSLauncher-Appx.vcxproj')) + $appxArguments)
@@ -497,6 +500,76 @@ function New-SignedBundle {
     return $bundlePath
 }
 
+function New-SideloadZip {
+    param(
+        [string]$PackagePath,
+        [string]$Name,
+        [string]$OutputDirectory,
+        [string]$Thumbprint
+    )
+
+    $testDirectory = Split-Path -Parent $PackagePath
+    foreach ($scriptName in @('Install.ps1', 'Add-AppDevPackage.ps1')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $testDirectory $scriptName) -PathType Leaf)) {
+            throw "$testDirectory does not contain $scriptName."
+        }
+    }
+
+    $certificates = @(Get-ChildItem -LiteralPath $testDirectory -Filter '*.cer' -File)
+    if ($certificates.Count -ne 1) {
+        throw "Expected one public signing certificate in $testDirectory, found $($certificates.Count)."
+    }
+    $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificates[0].FullName)
+    try {
+        if ($certificate.Thumbprint -cne $Thumbprint) {
+            throw "$($certificates[0].FullName) does not match the package signing certificate."
+        }
+    }
+    finally {
+        $certificate.Dispose()
+    }
+
+    $zipPath = Join-Path $OutputDirectory "$Name.zip"
+    if (Test-Path -LiteralPath $zipPath) {
+        Remove-Item -LiteralPath $zipPath -Force
+    }
+    [System.IO.Compression.ZipFile]::CreateFromDirectory(
+        $testDirectory,
+        $zipPath,
+        [System.IO.Compression.CompressionLevel]::NoCompression,
+        $true
+    )
+
+    if ((Get-Item -LiteralPath $zipPath).Length -ge $GitHubAssetLimit) {
+        throw "$zipPath is not strictly smaller than 2 GiB."
+    }
+
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+    try {
+        $entryNames = @($archive.Entries | ForEach-Object { $_.FullName })
+        $requiredEntries = @(
+            'Install.ps1',
+            'Add-AppDevPackage.ps1',
+            $certificates[0].Name,
+            [System.IO.Path]::GetFileName($PackagePath)
+        )
+        foreach ($requiredEntry in $requiredEntries) {
+            if (-not ($entryNames | Where-Object { [System.IO.Path]::GetFileName($_) -eq $requiredEntry } | Select-Object -First 1)) {
+                throw "$zipPath does not contain $requiredEntry."
+            }
+        }
+        if ($entryNames | Where-Object { $_ -match '(?i)\.pfx$' } | Select-Object -First 1) {
+            throw "$zipPath contains a private-key file."
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+
+    Write-Host "Verified sideload ZIP with installer and matching certificate: $zipPath"
+    return $zipPath
+}
+
 $msbuild = Find-MSBuild
 $sdk = Find-SdkTools
 $systemTar = Join-Path $env:SystemRoot 'System32\tar.exe'
@@ -539,17 +612,19 @@ Copy-StagedImage -Image $amd64 -Platform 'x64'
 Copy-StagedImage -Image $arm64 -Platform 'ARM64'
 
 $buildRoot = Join-Path $outputDirectory 'build'
-$x64Package = Build-ArchitecturePackage -Platform 'x64' -BuildRoot $buildRoot -MSBuild $msbuild -SdkVersion $sdk.Version
-$arm64Package = Build-ArchitecturePackage -Platform 'ARM64' -BuildRoot $buildRoot -MSBuild $msbuild -SdkVersion $sdk.Version
+$x64Package = Build-ArchitecturePackage -Platform 'x64' -BuildRoot $buildRoot -MSBuild $msbuild -SdkVersion $sdk.Version -CertificateThumbprint $CertificateThumbprint
+$arm64Package = Build-ArchitecturePackage -Platform 'ARM64' -BuildRoot $buildRoot -MSBuild $msbuild -SdkVersion $sdk.Version -CertificateThumbprint $CertificateThumbprint
 
 Test-AppxPackage -PackagePath $x64Package -Architecture 'x64' -Version $packageVersion -Image $amd64
 Test-AppxPackage -PackagePath $arm64Package -Architecture 'arm64' -Version $packageVersion -Image $arm64
+Test-PackageSignature -PackagePath $x64Package -SignTool $sdk.SignTool -Thumbprint $CertificateThumbprint
+Test-PackageSignature -PackagePath $arm64Package -SignTool $sdk.SignTool -Thumbprint $CertificateThumbprint
 
 $storeBundle = New-SignedBundle -Name "AOSCOS_${packageVersion}_Store_x64_ARM64" -Packages @($x64Package, $arm64Package) -Architectures @('x64', 'arm64') -Version $packageVersion -BundleDirectory $outputDirectory -MakeAppx $sdk.MakeAppx -SignTool $sdk.SignTool
-$x64Bundle = New-SignedBundle -Name "AOSCOS_${packageVersion}_x64" -Packages @($x64Package) -Architectures @('x64') -Version $packageVersion -BundleDirectory $outputDirectory -MakeAppx $sdk.MakeAppx -SignTool $sdk.SignTool -GitHubAsset
-$arm64Bundle = New-SignedBundle -Name "AOSCOS_${packageVersion}_ARM64" -Packages @($arm64Package) -Architectures @('arm64') -Version $packageVersion -BundleDirectory $outputDirectory -MakeAppx $sdk.MakeAppx -SignTool $sdk.SignTool -GitHubAsset
+$x64Zip = New-SideloadZip -PackagePath $x64Package -Name "AOSCOSLauncher-Appx_${packageVersion}_x64_Test" -OutputDirectory $outputDirectory -Thumbprint $CertificateThumbprint
+$arm64Zip = New-SideloadZip -PackagePath $arm64Package -Name "AOSCOSLauncher-Appx_${packageVersion}_arm64_Test" -OutputDirectory $outputDirectory -Thumbprint $CertificateThumbprint
 
-$checksumLines = @($x64Bundle, $arm64Bundle) | ForEach-Object {
+$checksumLines = @($x64Zip, $arm64Zip) | ForEach-Object {
     $hash = Get-Sha256Hash -Path $_
     "$hash *$([System.IO.Path]::GetFileName($_))"
 }
@@ -557,5 +632,5 @@ $checksumPath = Join-Path $outputDirectory 'SHA256SUMS'
 [System.IO.File]::WriteAllText($checksumPath, ($checksumLines -join "`n") + "`n", [System.Text.Encoding]::ASCII)
 
 Write-Host "Release artifacts: $outputDirectory"
-Get-Item -LiteralPath $storeBundle, $x64Bundle, $arm64Bundle, $checksumPath |
+Get-Item -LiteralPath $storeBundle, $x64Zip, $arm64Zip, $checksumPath |
     Select-Object Name, Length, FullName

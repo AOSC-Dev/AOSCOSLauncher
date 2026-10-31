@@ -43,15 +43,15 @@ The script performs the complete local release:
 1. Verify both SHA-256 hashes and rootfs versions.
 2. Set the Appx manifest version and generate Store association metadata if it is missing.
 3. Locate or generate a current-user certificate matching the existing Store publisher.
-4. Build Release x64 and ARM64 launchers and unsigned architecture packages.
-5. Verify each package's architecture, version, launcher, and embedded rootfs hash.
-6. Create a combined Store bundle and separate x64 and ARM64 sideload bundles.
-7. Sign all bundles, verify signer identity and signature integrity, and check bundle contents.
+4. Build Release x64 and ARM64 launchers and signed architecture packages.
+5. Verify each package's architecture, version, launcher, embedded rootfs hash, signer, and signature integrity.
+6. Create and sign a combined Store bundle and verify its contents.
+7. Package the complete toolchain-generated x64 and ARM64 `_Test` folders as ZIPs, including `Install.ps1`, the signed `.appx`, and the matching public `.cer`.
 8. Require each GitHub asset to be strictly smaller than 2 GiB and write `SHA256SUMS` with LF line endings.
 
 The generated `Package.StoreAssociation.xml` is local metadata based on the existing Store identity; it is ignored by Git. No wizard UI or server-side association change is needed for an already associated app. Visual Studio's `_ValidateSigningCertificate` MSBuild target generates a publisher-matching certificate when no valid one exists. The private key remains in the current-user certificate store and is not exported by the release script.
 
-The certificate is self-signed. Signature verification accepts only the expected untrusted-root result after checking the signer thumbprint and package integrity; hash or signer failures remain fatal. Sideload machines must trust the signing certificate before installing the bundle.
+The certificate is self-signed. Signature verification accepts only the expected untrusted-root result after checking the signer thumbprint and package integrity; hash or signer failures remain fatal. For sideloading, extract the architecture-specific ZIP and run `Install.ps1`. The toolchain script offers to install the included certificate into `TrustedPeople` before installing the signed package.
 
 ## Artifacts
 
@@ -59,12 +59,12 @@ Artifacts are written to `artifacts/release/14.0.0.0/`:
 
 ```text
 AOSCOS_14.0.0.0_Store_x64_ARM64.appxbundle
-AOSCOS_14.0.0.0_x64.appxbundle
-AOSCOS_14.0.0.0_ARM64.appxbundle
+AOSCOSLauncher-Appx_14.0.0.0_x64_Test.zip
+AOSCOSLauncher-Appx_14.0.0.0_arm64_Test.zip
 SHA256SUMS
 ```
 
-The Store bundle contains both architectures. Only the two architecture-specific bundles and `SHA256SUMS` are GitHub release assets.
+The Store bundle contains both architectures. Only the two architecture-specific sideload ZIPs and `SHA256SUMS` are GitHub release assets.
 
 Verify the GitHub assets from Git Bash:
 
@@ -89,8 +89,8 @@ Create the public release with generated notes:
 
 ```powershell
 gh release create v14.0.0 `
-  artifacts/release/14.0.0.0/AOSCOS_14.0.0.0_x64.appxbundle `
-  artifacts/release/14.0.0.0/AOSCOS_14.0.0.0_ARM64.appxbundle `
+  artifacts/release/14.0.0.0/AOSCOSLauncher-Appx_14.0.0.0_x64_Test.zip `
+  artifacts/release/14.0.0.0/AOSCOSLauncher-Appx_14.0.0.0_arm64_Test.zip `
   artifacts/release/14.0.0.0/SHA256SUMS `
   --title "AOSC OS on WSL 14.0.0" `
   --generate-notes `
